@@ -30,6 +30,7 @@
   "dependencies": {
     "@nomiclabs/hardhat-ganache": "^2.0.1",
     "@openzeppelin/contracts": "3.4.0-solc-0.7",
+    "@openzeppelin/contracts-upgradeable": "^4.5.1",
     "erc-payable-token": "3.4.0",
     "eth-token-recover": "3.4.0",
     "lite-server": "^2.6.1"

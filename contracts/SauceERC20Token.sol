@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Capped.sol";
 import "erc-payable-token/contracts/token/ERC1363/ERC1363.sol";
 import "eth-token-recover/contracts/TokenRecover.sol";
-import "./behaviors/ERC20Mintable.sol";
-import "../../access/Roles.sol";
+import "./token/ERC20/behaviors/ERC20Mintable.sol";
+import "./access/Roles.sol";
 
 contract SauceERC20Token is ERC20Capped, ERC20Mintable, ERC20Burnable, ERC1363, TokenRecover, Roles {
     constructor (
