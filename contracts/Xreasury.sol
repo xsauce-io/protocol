@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.7.5;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -10,10 +11,11 @@ import "./interfaces/IERC20Metadata.sol";
 import "./interfaces/ISAUX.sol";
 import "./interfaces/IsSAUX.sol";
 import "./interfaces/IBondingCalculator.sol";
-import "./interfaces/ITreasury.sol";
+import "./interfaces/IXreasury.sol";
+import "./interfaces/XsauceOwnable.sol";
 
 
-contract Xreasury is Ownable, AccessControl, ITreasury {
+contract Xreasury is XsauceOwnable, AccessControl, IXreasury {
     /* ========== DEPENDENCIES ========== */
 
     using SafeMath for uint256;
@@ -43,8 +45,8 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
         LIQUIDITYMANAGER,
         RESERVEDEBTOR,
         REWARDMANAGER,
-        SOHM,
-        OHMDEBTOR
+        SSAUX,
+        SAUXDEBTOR
     }
 
     struct Queue {
@@ -59,7 +61,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
     /* ========== STATE VARIABLES ========== */
 
     ISAUX public immutable SAUX;
-    IsSaux public sSAUX;
+    IsSAUX public sSAUX;
 
     mapping(STATUS => address[]) public registry;
     mapping(STATUS => mapping(address => bool)) public permissions;
@@ -202,7 +204,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
     function incurDebt(uint256 _amount, address _token) external override {
         uint256 value;
         if (_token == address(SAUX)) {
-            require(permissions[STATUS.OHMDEBTOR][msg.sender], notApproved);
+            require(permissions[STATUS.SAUXDEBTOR][msg.sender], notApproved);
             value = _amount;
         } else {
             require(permissions[STATUS.RESERVEDEBTOR][msg.sender], notApproved);
@@ -247,7 +249,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
      */
     function repayDebtWithOHM(uint256 _amount) external {
         require(
-            permissions[STATUS.RESERVEDEBTOR][msg.sender] || permissions[STATUS.OHMDEBTOR][msg.sender],
+            permissions[STATUS.RESERVEDEBTOR][msg.sender] || permissions[STATUS.SAUXDEBTOR][msg.sender],
             notApproved
         );
         SAUX.burnFrom(msg.sender, _amount);
@@ -263,7 +265,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
      * @notice takes inventory of all tracked assets
      * @notice always consolidate to recognized reserves before audit
      */
-    function auditReserves() external onlyOwner {
+    function auditReserves() external onlyManagers {
         uint256 reserves;
         address[] memory reserveToken = registry[STATUS.RESERVETOKEN];
         for (uint256 i = 0; i < reserveToken.length; i++) {
@@ -288,7 +290,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
      * @param _address address
      * @param _limit uint256
      */
-    function setDebtLimit(address _address, uint256 _limit) external onlyOwner {
+    function setDebtLimit(address _address, uint256 _limit) external onlyManagers {
         debtLimit[_address] = _limit;
     }
 
@@ -302,10 +304,10 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
         STATUS _status,
         address _address,
         address _calculator
-    ) external onlyOwner {
+    ) external onlyAdmins {
         require(timelockEnabled == false, "Use queueTimelock");
         if (_status == STATUS.SSAUX) {
-            sSAUX = IsOHM(_address);
+            sSAUX = IsSAUX(_address);
         } else {
             permissions[_status][_address] = true;
 
@@ -333,8 +335,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
      *  @param _status STATUS
      *  @param _toDisable address
      */
-    function disable(STATUS _status, address _toDisable) external {
-        require(msg.sender == authority.governor() || msg.sender == authority.guardian(), "Only governor or guardian");
+    function disable(STATUS _status, address _toDisable) external onlyManagers {
         permissions[_status][_toDisable] = false;
         emit Permissioned(_toDisable, _status, false);
     }
@@ -367,7 +368,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
         STATUS _status,
         address _address,
         address _calculator
-    ) external onlyOwner {
+    ) external onlyAdmins {
         require(_address != address(0));
         require(timelockEnabled == true, "Timelock is disabled, use enable");
 
@@ -403,7 +404,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
 
         if (info.managing == STATUS.SSAUX) {
             // 9
-            sSAUX = IsOHM(info.toPermit);
+            sSAUX = IsSAUX(info.toPermit);
         } else {
             permissions[info.managing][info.toPermit] = true;
 
@@ -435,14 +436,14 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
      * @notice cancel timelocked action
      * @param _index uint256
      */
-    function nullify(uint256 _index) external onlyOwner {
+    function nullify(uint256 _index) external onlyAdmins {
         permissionQueue[_index].nullify = true;
     }
 
     /**
      * @notice disables timelocked functions
      */
-    function disableTimelock() external onlyOwner {
+    function disableTimelock() external onlyAdmins {
         require(timelockEnabled == true, "timelock already disabled");
         if (onChainGovernanceTimelock != 0 && onChainGovernanceTimelock <= block.number) {
             timelockEnabled = false;
@@ -454,7 +455,7 @@ contract Xreasury is Ownable, AccessControl, ITreasury {
     /**
      * @notice enables timelocks after initilization
      */
-    function initialize() external onlyOwner {
+    function initialize() external onlyAdmins {
         require(initialized == false, "Already initialized");
         timelockEnabled = true;
         initialized = true;
