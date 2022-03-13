@@ -2,7 +2,7 @@
 
 pragma solidity ^0.7.0;
 
-interface IXreasury {
+interface IXtreasury {
     function deposit(
         uint256 _amount,
         address _token,

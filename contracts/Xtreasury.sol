@@ -11,11 +11,11 @@ import "./interfaces/IERC20Metadata.sol";
 import "./interfaces/ISAUX.sol";
 import "./interfaces/IsSAUX.sol";
 import "./interfaces/IBondingCalculator.sol";
-import "./interfaces/IXreasury.sol";
+import "./interfaces/IXtreasury.sol";
 import "./interfaces/XsauceOwnable.sol";
 
 
-contract Xreasury is XsauceOwnable, AccessControl, IXreasury {
+contract Xreasury is XsauceOwnable, AccessControl, IXtreasury {
     /* ========== DEPENDENCIES ========== */
 
     using SafeMath for uint256;
@@ -90,8 +90,7 @@ contract Xreasury is XsauceOwnable, AccessControl, IXreasury {
 
     constructor(
         address _saux,
-        uint256 _timelock,
-        address _authority
+        uint256 _timelock
     ) {
         require(_saux != address(0), "Zero address: SAUX");
         SAUX = ISAUX(_saux);
@@ -335,7 +334,7 @@ contract Xreasury is XsauceOwnable, AccessControl, IXreasury {
      *  @param _status STATUS
      *  @param _toDisable address
      */
-    function disable(STATUS _status, address _toDisable) external onlyManagers {
+    function disable(STATUS _status, address _toDisable) external onlyAdmins {
         permissions[_status][_toDisable] = false;
         emit Permissioned(_toDisable, _status, false);
     }

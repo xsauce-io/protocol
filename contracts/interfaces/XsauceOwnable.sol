@@ -16,21 +16,17 @@ import "@openzeppelin/contracts/utils/Context.sol";
  * the owner.
  */
 abstract contract XsauceOwnable is Context {
-    string private _active = "active";
-    string private _banned = "banned";
     address private _owner;
-    mapping(address => string) private _admins;
-    mapping(address => string) private _managers;
+    mapping(address => uint) private _admins;
+    mapping(address => uint) private _managers;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     
     event AdminAdded(address indexed newAdmin);
     event AdminRemoved(address indexed oldAdmin);
-    event AdminBanned(address indexed bannedAdmin);
     
     event ManagerAdded(address indexed newManager);
     event ManagerRemoved(address indexed oldManager);
-    event ManagerBanned(address indexed bannedManager);
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -38,8 +34,8 @@ abstract contract XsauceOwnable is Context {
     constructor () {
         address msgSender = _msgSender();
         _owner = msgSender;
-        _admins[msgSender] = _active;
-        _managers[msgSender] = _active;
+        _admins[msgSender] = 1;
+        _managers[msgSender] = 1;
         emit OwnershipTransferred(address(0), msgSender);
         emit AdminAdded(msgSender);
         emit ManagerAdded(msgSender);
@@ -64,66 +60,42 @@ abstract contract XsauceOwnable is Context {
      * @dev Throws if called by any account other than the admins.
      */
     modifier onlyAdmins() {
-        require(_admins[_msgSender()] != 0, "XsauceOwnable: caller is not an admin");
-        require(_admins[_msgSender()] != _banned, "XsauceOwnable: caller is banned");
+        require(_admins[_msgSender()] == 1, "XsauceOwnable: caller is not an admin");
         _;
     }
 
      function addAdmin(address newAdmin_) public virtual onlyOwner {
         require(_admins[newAdmin_] == 0, "XsauceOwnable: admin already added");
-        require(_admins[newAdmin_] != _banned, "XsauceOwnable: banned admin");
         emit AdminAdded(newAdmin_);
-        _admins[newAdmin_] = _active;
-        _managers[newAdmin_] = _active
+        _admins[newAdmin_] = 1;
+        _managers[newAdmin_] = 1;
     }
 
     function removeAdmin(address oldAdmin_) public virtual onlyAdmins {
         require(_admins[oldAdmin_] != 0, "XsauceOwnable: admin already removed");
         emit AdminRemoved(oldAdmin_);
         delete _admins[oldAdmin_];
-    }
-
-    function banAdmin(address bannedAdmin_) public virtual onlyAdmins {
-        require(_admins[bannedAdmin_] != 0, "XsauceOwnable: admin does not exist");
-        require(_admins[bannedAdmin_] != _banned, "XsauceOwnable: admin already banned");
-        emit AdminBanned(bannedAdmin_);
-        _admins[bannedAdmin_] = _banned;
-    }
-    
-    /**
-     * @dev Throws if called by any account other than the admins.
-     */
-    function managers() public view virtual returns (mapping memory){
-        return _managers;
+        delete _managers[oldAdmin_];
     }
 
     /**
      * @dev Throws if called by any account other than the managers.
      */
     modifier onlyManagers() {
-        require(_managers[_msgSender()] != 0, "XsauceOwnable: caller is not a manager");
-        require(_managers[_msgSender()] != _banned, "XsauceOwnable: caller is banned");
+        require(_managers[_msgSender()] == 1, "XsauceOwnable: caller is not a manager");
         _;
     }
 
     function addManager(address newManager_) public virtual onlyAdmins {
         require(_managers[newManager_] == 0, "XsauceOwnable: new manager already exists");
-        require(_managers[newManager_] != _banned, "XsauceOwnable: new manager is banned");
         emit ManagerAdded(newManager_);
-        _managers[newManager_] = _active;
+        _managers[newManager_] = 1;
     }
 
     function removeManager(address oldManager_) public virtual onlyAdmins {
         require(_managers[oldManager_] != 0, "Management: manager does not exist");
         emit ManagerRemoved(oldManager_);
         delete _managers[oldManager_];
-    }
-
-    function banManager(address bannedManager_) public virtual onlyAdmins {
-        require(_managers[bannedManager_] != 0, "XsauceOwnable: manager does not exist");
-        require(_managers[bannedManager_] != _banned, "XsauceOwnable: manager already banned");
-        emit ManagerBanned(bannedManager_);
-        _managers[bannedManager_] = _banned;
     }
 
     /**
@@ -133,7 +105,7 @@ abstract contract XsauceOwnable is Context {
      * NOTE: Renouncing ownership will leave the contract without an owner,
      * thereby removing any functionality that is only available to the owner.
      */
-    function renounceOwnership() public virtual onlyAdmins {
+    function renounceOwnership() public virtual onlyOwner {
         emit OwnershipTransferred(_owner, address(0));
         _owner = address(0);
     }

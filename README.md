@@ -1,15 +1,16 @@
-# Basic Sample Hardhat Project
+# Xsauce Protocol
+Welcome to the Xsauce Protocol!
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+The Xsauce "Protocol" is less so a formal protocol and more so a suite of tools that empower the evolution of cultural assets.
 
-Try running some of the following tasks:
+## Contracts
+In this repo you will find contracts such as:
+- SauceERC20Token
+- xTreasury
+- xDAO
+- xChange
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+## Resources
+Checkout our docs to learn more: https://docs.xsauce.io/
+
+Read our whitepaper to learn more: https://xsauce.io/xsaucewhitepaperV1.pdf
