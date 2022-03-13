@@ -6,9 +6,9 @@ The Xsauce "Protocol" is less so a formal protocol and more so a suite of tools 
 ## Contracts
 In this repo you will find contracts such as:
 - SauceERC20Token
-- xTreasury
-- xDAO
-- xChange
+- Xtreasury
+- DAOx
+- Xchange
 
 ## Resources
 Checkout our docs to learn more: https://docs.xsauce.io/
